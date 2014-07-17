@@ -1,7 +1,15 @@
 import sys
 import unittest
 
+from httmock import urlmatch, HTTMock
+
 from trackerlater import Project, Story, BASE_URL, main
+
+
+@urlmatch(netloc=r'(.*\.)?pivotaltracker\.com$')
+def tracker_mock(url, request):
+    return '[{"id": 1, "name": "story 1"}, \
+             {"id": 2, "name": "story 2"}]'
 
 
 class TestMain(unittest.TestCase):
@@ -21,7 +29,8 @@ class TestMain(unittest.TestCase):
 
     def testMain_withAProjectIdArg(self):
         sys.argv.extend(["yada", "123"])
-        self.assertEqual(0, main())
+        with HTTMock(tracker_mock):
+            self.assertEqual(0, main())
 
 
 class TestProject(unittest.TestCase):
@@ -36,7 +45,8 @@ class TestProject(unittest.TestCase):
 
     def testProject_HasStories(self):
         project = Project(1)
-        project.stories_json = '[{"name": "story 1"}, {"name": "story 2"}]'
+        with HTTMock(tracker_mock):
+            project.get_stories()
         self.assertEqual("story 1", project.stories[0].name)
         self.assertEqual("story 2", project.stories[1].name)
 
@@ -63,3 +73,7 @@ class TestStory(unittest.TestCase):
                                     u'id': 8612860}]})
         self.assertEqual(1, len(story.labels))
         self.assertEqual("yada", story.labels[0]['name'])
+
+    def testStory_HasAName(self):
+        story = Story("some/url", {"id": "yada", u'name': "a name"})
+        self.assertEqual("a name", story.name)

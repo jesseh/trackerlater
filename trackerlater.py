@@ -10,22 +10,20 @@ API_TOKEN = os.environ['API_TOKEN']
 
 
 class Project():
-    def __init__(self, id):
+    def __init__(self, id, stories=None):
         self.id = id
         self.url = BASE_URL + "projects/%s" % self.id
-        self.stories = Stories(self.url)
+        self.stories = stories
 
-
-class Stories():
-    def __init__(self, project_url):
-        self.url = "%s/%s" % (project_url, "stories")
-        self.all = self.get()
-
-    def get(self):
-        print("Requesting %s" % self.url)
-        r = requests.get(self.url, headers={"X-TrackerToken": API_TOKEN})
+    def get_stories(self):
+        stories_url = "%s/%s" % (self.url, "stories")
+        print("Requesting %s" % stories_url)
+        r = requests.get(stories_url, headers={"X-TrackerToken": API_TOKEN})
         data = json.loads(r.text)
-        return [Story(self.url, d) for d in data]
+        if hasattr(data, 'keys') and 'error' in data.keys():
+            print("Pivotal Tracker API Error: %s" % data)
+            exit(1)
+        self.stories = [Story(stories_url, d) for d in data]
 
 
 class Story():
@@ -39,7 +37,11 @@ class Story():
 
     @property
     def labels(self):
-        return self.data['labels']
+        return self.data.get('labels', [])
+
+    @property
+    def name(self):
+        return self.data['name']
 
 
 def main():
@@ -48,8 +50,9 @@ def main():
         return(1)
     project_id = sys.argv[1]
     print("Project id: %s" % project_id)
-    stories = Project(project_id).stories.all
-    for story in stories:
+    project = Project(project_id)
+    project.get_stories()
+    for story in project.stories:
         print "---\n"
         print story.data
     return(0)
