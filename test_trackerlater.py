@@ -1,5 +1,6 @@
 import sys
 import unittest
+from datetime import datetime, timedelta
 
 from httmock import urlmatch, HTTMock
 
@@ -77,3 +78,23 @@ class TestStory(unittest.TestCase):
     def testStory_HasAName(self):
         story = Story("some/url", {"id": "yada", u'name': "a name"})
         self.assertEqual("a name", story.name)
+
+    def testStory_IsNotDeferred(self):
+        story = Story("some/url", {"id": "1", 'name': "yada ->1d"})
+        self.assertFalse(story.is_deferred)
+
+    def testStory_IsDeferred(self):
+        story = Story("some/url", {"id": "1", 'name': "->2d"})
+        self.assertTrue(story.is_deferred)
+
+    def testStory_IsDeferredForOneDay(self):
+        story = Story("some/url", {"id": "1", 'name': "->1d yada"})
+        self.assertEqual(timedelta(1), story.deferred_for)
+
+    def testStory_IsDeferredFor12Days(self):
+        story = Story("some/url", {"id": "1", 'name': "->12d yada"})
+        self.assertEqual(timedelta(12), story.deferred_for)
+
+    def testStory_ResumeDateIfDeferredFor12Days(self):
+        story = Story("some/url", {"id": "1", 'name': "->12d yada"})
+        self.assertEqual(datetime.now().date() + timedelta(12), story.resume_date)

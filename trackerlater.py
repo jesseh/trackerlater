@@ -1,9 +1,11 @@
 #! /usr/bin/env python
+from datetime import datetime, timedelta
 import os
+import re
 import sys
 
-import requests
 import json
+import requests
 
 BASE_URL = 'https://www.pivotaltracker.com/services/v5/'
 API_TOKEN = os.environ['API_TOKEN']
@@ -42,6 +44,23 @@ class Story():
     @property
     def name(self):
         return self.data['name']
+
+    @property
+    def is_deferred(self):
+        return bool(re.match("->", self.name))
+
+    @property
+    def deferred_for(self):
+        match = re.match("->(\d+)d ", self.name)
+        if match is None:
+            days = 0
+        else:
+            days = int(match.group(1))
+        return timedelta(days)
+
+    @property
+    def resume_date(self):
+        return datetime.now().date() + self.deferred_for
 
 
 def main():
