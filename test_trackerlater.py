@@ -93,27 +93,27 @@ class TestStory(unittest.TestCase):
         self.assertEqual(1, len(story.labels))
         self.assertEqual("yada", story.labels[0]['name'])
 
-    def testStory_HasAName(self):
+    def testHasAName(self):
         story = Story("some/url", {"id": "yada", u'name': "a name"})
         self.assertEqual("a name", story.name)
 
-    def testStory_IsNotDeferred(self):
+    def testIsNotDeferred(self):
         story = Story("some/url", {"id": "1", 'name': "yada ->1d"})
         self.assertFalse(story.is_deferred)
 
-    def testStory_IsDeferred(self):
+    def testIsDeferred(self):
         story = Story("some/url", {"id": "1", 'name': "->2d"})
         self.assertTrue(story.is_deferred)
 
-    def testStory_IsDeferredForOneDay(self):
+    def testIsDeferredForOneDay(self):
         story = Story("some/url", {"id": "1", 'name': "->1d yada"})
         self.assertEqual(timedelta(1), story.deferred_for)
 
-    def testStory_IsDeferredFor12Days(self):
+    def testIsDeferredFor12Days(self):
         story = Story("some/url", {"id": "1", 'name': "->12d yada"})
         self.assertEqual(timedelta(12), story.deferred_for)
 
-    def testStory_ResumeDateIfDeferredFor12Days(self):
+    def testResumeDateIfDeferredFor12Days(self):
         story = Story("some/url", {"id": "1", 'name': "->12d yada"})
         self.assertEqual(datetime.now().date() + timedelta(12),
                          story.resume_date)
