@@ -11,6 +11,17 @@ BASE_URL = 'https://www.pivotaltracker.com/services/v5/'
 API_TOKEN = os.environ['API_TOKEN']
 
 
+class TrackerService():
+    @classmethod
+    def get_url(self, url):
+        print("Requesting %s" % url)
+        r = requests.get(url, headers={"X-TrackerToken": API_TOKEN})
+        data = json.loads(r.text)
+        if hasattr(data, 'keys') and 'error' in data.keys():
+            raise RuntimeError("Pivotal Tracker API Error: %s" % data)
+        return data
+
+
 class Project():
     def __init__(self, id, stories=None):
         self.id = id
@@ -19,12 +30,7 @@ class Project():
 
     def get_stories(self):
         stories_url = "%s/%s" % (self.url, "stories")
-        print("Requesting %s" % stories_url)
-        r = requests.get(stories_url, headers={"X-TrackerToken": API_TOKEN})
-        data = json.loads(r.text)
-        if hasattr(data, 'keys') and 'error' in data.keys():
-            print("Pivotal Tracker API Error: %s" % data)
-            exit(1)
+        data = TrackerService.get_url(stories_url)
         self.stories = [Story(stories_url, d) for d in data]
 
 

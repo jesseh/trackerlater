@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 from httmock import urlmatch, HTTMock
 
-from trackerlater import Project, Story, BASE_URL, main
+from trackerlater import Project, Story, BASE_URL, main, TrackerService
 
 
 @urlmatch(netloc=r'(.*\.)?pivotaltracker\.com$')
@@ -32,6 +32,24 @@ class TestMain(unittest.TestCase):
         sys.argv.extend(["yada", "123"])
         with HTTMock(tracker_mock):
             self.assertEqual(0, main())
+
+
+class TestTrackerService(unittest.TestCase):
+    def testGetResource(self):
+        with HTTMock(tracker_mock):
+            data = TrackerService.get_url("http://www.pivotaltracker.com/url")
+        expects = [{"id": 1, "name": "story 1"},
+                   {"id": 2, "name": "story 2"}]
+        self.assertEqual(expects, data)
+
+    @urlmatch(netloc=r'(.*\.)?pivotaltracker\.com$')
+    def tracker_error_mock(self, url, request):
+        return '{"error": "to err is human"}'
+
+    def testGetResourceHasError(self):
+        with self.assertRaises(RuntimeError):
+            with HTTMock(self.tracker_error_mock):
+                TrackerService.get_url("http://www.pivotaltracker.com/url")
 
 
 class TestProject(unittest.TestCase):
@@ -97,4 +115,5 @@ class TestStory(unittest.TestCase):
 
     def testStory_ResumeDateIfDeferredFor12Days(self):
         story = Story("some/url", {"id": "1", 'name': "->12d yada"})
-        self.assertEqual(datetime.now().date() + timedelta(12), story.resume_date)
+        self.assertEqual(datetime.now().date() + timedelta(12),
+                         story.resume_date)
